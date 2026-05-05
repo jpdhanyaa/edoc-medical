@@ -1,0 +1,9 @@
+{
+  "name": "eDOC",
+  "description": "A telecommunication consultation platform for doctors and patients with real-time booking, chat, and video call capabilities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}

@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && getUserData(request.auth.uid).role == role;
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == userId &&
+               data.email is string &&
+               data.role in ['doctor', 'patient'];
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); 
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && 
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'specialization', 'email', 'uid', 'role']);
+    }
+
+    // --- Appointments Collection ---
+    match /appointments/{appointmentId} {
+      function isValidAppointment(data) {
+        return data.patientId == request.auth.uid &&
+               data.status == 'pending';
+      }
+
+      function isParticipant(data) {
+        return isSignedIn() && (
+          request.auth.uid == data.patientId || 
+          request.auth.uid == data.doctorId
+        );
+      }
+
+      allow get: if isParticipant(resource.data) || hasRole('doctor');
+      allow list: if isSignedIn(); // Broaden list to allow the different dashboard queries
+      
+      allow create: if isSignedIn() && isValidAppointment(request.resource.data);
+      
+      allow update: if (isParticipant(resource.data) || hasRole('doctor')) && (
+        // Doctor actions
+        (hasRole('doctor') && request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'prescription'])) ||
+        // Patient actions
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+      );
+    }
+
+    // --- Reports Subcollection ---
+    match /users/{patientId}/reports/{reportId} {
+      allow read: if isSignedIn() && (isOwner(patientId) || hasRole('doctor'));
+      allow create: if isSignedIn() && (isOwner(patientId) || hasRole('doctor'));
+      allow update, delete: if isOwner(patientId);
+    }
+
+    // --- Messages Subcollection ---
+    match /appointments/{appointmentId}/messages/{messageId} {
+      allow read, create: if isSignedIn(); // Simplified for now to avoid get() overhead in rules
+    }
+
+    // --- Emergency Alerts ---
+    match /emergencies/{emergencyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.patientId == request.auth.uid;
+      allow update: if isSignedIn();
+    }
+
+    // --- Prescriptions ---
+    match /prescriptions/{prescriptionId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // --- Vitals ---
+    match /vitals/{vitalId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // --- Tasks ---
+    match /tasks/{taskId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user (Doctor or Patient)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["doctor", "patient"] },
+        "specialization": { "type": "string" },
+        "bio": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Medical appointment booking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "completed"] },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "reason": { "type": "string" },
+        "prescription": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "status", "date", "time"]
+    },
+    "MedicalReport": {
+      "title": "Medical Report",
+      "description": "A medical report or record attached by a patient",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "patientId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "patientId"]
+    },
+    "Emergency": {
+      "title": "Emergency Alert",
+      "description": "A 1-tap emergency signal sent by a patient",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "resolved"] },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "status"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["appointmentId", "senderId", "text"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "A medical prescription",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "medication": { "type": "string" },
+        "dosage": { "type": "string" },
+        "instructions": { "type": "string" },
+        "isPaid": { "type": "boolean" },
+        "amount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "medication", "isPaid"]
+    },
+    "Vital": {
+      "title": "Vital Reading",
+      "description": "Patient biometric data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Blood Pressure", "Glucose", "Heart Rate", "Weight"] },
+        "value": { "type": "number" },
+        "unit": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "type", "value"]
+    },
+    "Task": {
+      "title": "Care Task",
+      "description": "Reminders and medical tasks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["medication", "followup", "clinical"] },
+        "isCompleted": { "type": "boolean" },
+        "dueDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Appointment records"
+    },
+    "/appointments/{appointmentId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Chat messages for a specific appointment"
+    },
+    "/users/{userId}/reports/{reportId}": {
+      "schema": "MedicalReport",
+      "description": "Medical reports for a patient"
+    },
+    "/emergencies/{emergencyId}": {
+      "schema": "Emergency",
+      "description": "Global emergency alerts"
+    },
+    "/prescriptions/{prescriptionId}": {
+      "schema": "Prescription",
+      "description": "Digital prescriptions issued by doctors"
+    },
+    "/vitals/{vitalId}": {
+      "schema": "Vital",
+      "description": "Patient biometric history"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User reminders and tasks"
+    }
+  }
+}
